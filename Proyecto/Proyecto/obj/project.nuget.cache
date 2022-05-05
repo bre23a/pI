@@ -1,0 +1,43 @@
+{
+  "version": 2,
+  "dgSpecHash": "eEzD2ekp8an+zkKbShaON6UZgx1ZPrQvXlPm3laQqfKqj+y3I5w0qHolrUP0JmhGKK1Q+7ZeT0Ki1ULmpxMXOg==",
+  "success": true,
+  "projectFilePath": "D:\\Documentos\\Facultad\\Octavo semestre\\Procesamiento de imagenes\\Proyecto\\Proyecto\\Proyecto\\Proyecto.csproj",
+  "expectedPackageFiles": [
+    "C:\\Users\\curii\\.nuget\\packages\\emgu.cv\\4.1.1.3497\\emgu.cv.4.1.1.3497.nupkg.sha512",
+    "C:\\Users\\curii\\.nuget\\packages\\emgu.cv.bitmap\\4.5.5.4823\\emgu.cv.bitmap.4.5.5.4823.nupkg.sha512",
+    "C:\\Users\\curii\\.nuget\\packages\\emgu.cv.runtime.windows\\4.5.5.4823\\emgu.cv.runtime.windows.4.5.5.4823.nupkg.sha512",
+    "C:\\Users\\curii\\.nuget\\packages\\emgu.runtime.windows.msvc.rt.x64\\19.29.30138\\emgu.runtime.windows.msvc.rt.x64.19.29.30138.nupkg.sha512",
+    "C:\\Users\\curii\\.nuget\\packages\\emgu.runtime.windows.msvc.rt.x86\\19.29.30138\\emgu.runtime.windows.msvc.rt.x86.19.29.30138.nupkg.sha512",
+    "C:\\Users\\curii\\.nuget\\packages\\system.drawing.common\\6.0.0\\system.drawing.common.6.0.0.nupkg.sha512",
+    "C:\\Users\\curii\\.nuget\\packages\\zedgraph\\5.1.7\\zedgraph.5.1.7.nupkg.sha512"
+  ],
+  "logs": [
+    {
+      "code": "NU1605",
+      "level": "Warning",
+      "warningLevel": 1,
+      "message": "Degradación del paquete detectada: Emgu.CV de 4.5.5.4823 a 4.1.1.3497. Haga referencia al paquete directamente desde el proyecto para seleccionar una versión diferente. \r\n Proyecto -> Emgu.CV.Bitmap 4.5.5.4823 -> Emgu.CV (>= 4.5.5.4823) \r\n Proyecto -> EMGU.CV (>= 4.1.1.3497)",
+      "libraryId": "Emgu.CV",
+      "targetGraphs": [
+        ".NETFramework,Version=v4.7.2",
+        ".NETFramework,Version=v4.7.2/win",
+        ".NETFramework,Version=v4.7.2/win-x64",
+        ".NETFramework,Version=v4.7.2/win-x86"
+      ]
+    },
+    {
+      "code": "NU1605",
+      "level": "Warning",
+      "warningLevel": 1,
+      "message": "Degradación del paquete detectada: Emgu.CV de 4.5.5.4823 a 4.1.1.3497. Haga referencia al paquete directamente desde el proyecto para seleccionar una versión diferente. \r\n Proyecto -> Emgu.CV.runtime.windows 4.5.5.4823 -> Emgu.CV (>= 4.5.5.4823) \r\n Proyecto -> EMGU.CV (>= 4.1.1.3497)",
+      "libraryId": "Emgu.CV",
+      "targetGraphs": [
+        ".NETFramework,Version=v4.7.2",
+        ".NETFramework,Version=v4.7.2/win",
+        ".NETFramework,Version=v4.7.2/win-x64",
+        ".NETFramework,Version=v4.7.2/win-x86"
+      ]
+    }
+  ]
+}

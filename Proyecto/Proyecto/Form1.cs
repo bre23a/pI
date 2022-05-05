@@ -9,11 +9,30 @@ using System.Threading.Tasks;
 using System.Windows.Forms;
 using AForge.Video.DirectShow;
 using AForge.Video;
+using Emgu.CV;
+using Emgu.CV.Structure;
+using AForge.Vision.Motion;
 
+
+using HaarCascadeClassifer;
 namespace Proyecto
 {
     public partial class Form1 : Form
     {
+       /* static readonly CascadeClassifier cascadeClassifier = new CascadeClassifier("haarcascade_frontalface_alt_tree.xml");
+        */
+
+        VideoCapture capture;
+        bool reproduciendo=false;
+        int framestotales;
+        int frameactualnum;
+        Mat frameactual;
+        int fps;
+
+        FilterInfoCollection dispositivos;         
+        MotionDetector detector;        
+        float deteccion;
+
         private bool Camaradetect;
         private FilterInfoCollection Camaras;
         private VideoCaptureDevice Camaraselect;
@@ -88,6 +107,9 @@ namespace Proyecto
 
         private void Form1_Load(object sender, EventArgs e)
         {
+     
+            detector = new MotionDetector(new TwoFramesDifferenceDetector(), new MotionBorderHighlighting(Color.Blue));
+            deteccion = 0;
             resultante = new Bitmap(227, 202);
             pictureBox2.Image = resultante;
             CargaCamaras();
@@ -106,30 +128,17 @@ namespace Proyecto
                 Camaradetect=false;
             }
         }
-        public void ApagarCamara()
-        {
-            if (Camaraselect!=null&& Camaraselect.IsRunning)
-            {
-                Camaraselect.SignalToStop();
-                Camaraselect = null;
-            }
-        }
+        
 
         private void button9_Click_1(object sender, EventArgs e)
         {
-            ApagarCamara();
-            int i=comboBox1.SelectedIndex;
-            string nomCam = Camaras[i].MonikerString;
-            Camaraselect=new VideoCaptureDevice(nomCam);
-            Camaraselect.NewFrame += new NewFrameEventHandler(Send);
-            Camaraselect.Start();
+      using(openFileDialog1 = new OpenFileDialog())
+            Camaraselect = new VideoCaptureDevice(Camaras[comboBox1.SelectedIndex].MonikerString);
+            videoSourcePlayer1.VideoSource = Camaraselect;
+            videoSourcePlayer1.Start();
 
         }
-        private void Send(object sender, NewFrameEventArgs eventArgs)
-        {
-            Bitmap imagen= (Bitmap)eventArgs.Frame.Clone();
-            pictureBox3.Image = imagen;
-        }
+    
         
 
         private void Form1_MouseDown(object sender, MouseEventArgs e)
@@ -138,8 +147,8 @@ namespace Proyecto
         }
 
         private void Form1_FormClosed(object sender, FormClosedEventArgs e)
-        {           
-                ApagarCamara();           
+        {
+            Camaraselect.SignalToStop();
         }
 
         private void button6_Click(object sender, EventArgs e)
@@ -180,11 +189,65 @@ namespace Proyecto
                     if (cB < 0) cB = 1;
                     if (cB > 255) cB = 255;
 
-                    bmap.SetPixel(i, j,
-        Color.FromArgb((byte)cR, (byte)cG, (byte)cB));
+                    bmap.SetPixel(i, j, Color.FromArgb((byte)cR, (byte)cG, (byte)cB));
                 }
             }
             pictureBox2.Image = (Bitmap)bmap.Clone();
+        }
+
+        public void SetBrightnessvideo(int brightness)
+        {
+            Bitmap temp = (Bitmap)pictureBox1.Image;
+            Bitmap bmap = (Bitmap)temp.Clone();
+            unsafe
+            {
+
+                System.Drawing.Imaging.BitmapData bitmapData =
+                bmap.LockBits(new Rectangle(0, 0, bmap.Width, bmap.Height),System.Drawing.Imaging.ImageLockMode.ReadWrite, bmap.PixelFormat);
+                int bytesporpixel = System.Drawing.Bitmap.GetPixelFormatSize(bmap.PixelFormat)/8;
+                int alturadelpixel = bitmapData.Height;
+                int anchodelpixel = bitmapData.Width * bytesporpixel;
+                byte*ptrPrimerPixel =(byte*)bitmapData.Scan0;
+                if (brightness < -255) brightness = -255;
+                if (brightness > 255) brightness = 255;
+                Color c;
+
+                Parallel.For(0, alturadelpixel, y =>
+                  {
+                      byte* lineaactual = ptrPrimerPixel + (y * bitmapData.Stride);
+
+                      for (int i = 0; i < anchodelpixel; i = i + bytesporpixel)
+                      {
+                         
+                          int azul = lineaactual[i];
+                          int verde = lineaactual[i + 1];
+                          int rojo = lineaactual[i + 2];
+
+                          
+                          azul = azul + brightness;
+                          verde = verde + brightness;
+                          rojo = rojo + brightness;
+
+                          if (azul < 0) azul = 1;
+                          if (azul > 255) azul = 255;
+
+                          if (verde < 0) verde = 1;
+                          if (verde > 255) verde = 255;
+
+                          if (rojo < 0) rojo = 1;
+                          if (rojo > 255) rojo = 255;
+
+                          lineaactual[i] = (byte)azul;
+                          lineaactual[i + 1] = (byte)verde;
+                          lineaactual[i + 2] = (byte)rojo;
+
+                      }
+                  });       
+                bmap.UnlockBits(bitmapData);
+                pictureBox2.Image = (Bitmap)bmap.Clone();
+            }
+            
+          
         }
 
         private void button3_Click(object sender, EventArgs e)
@@ -308,10 +371,85 @@ namespace Proyecto
             pictureBox2.Image = resultante;
 
         }
+        public void gradientevideo()
+        {
+         
+           
+            Bitmap temp = (Bitmap)pictureBox1.Image;
+            Bitmap bmap = (Bitmap)temp.Clone();
+            grisvideo();
+            unsafe
+            {
+               
+
+                System.Drawing.Imaging.BitmapData bitmapData =
+                bmap.LockBits(new Rectangle(0, 0, bmap.Width, bmap.Height), System.Drawing.Imaging.ImageLockMode.ReadWrite, bmap.PixelFormat);
+                int bytesporpixel = System.Drawing.Bitmap.GetPixelFormatSize(bmap.PixelFormat) / 8;
+                int alturadelpixel = bitmapData.Height;
+                int anchodelpixel = bitmapData.Width * bytesporpixel;
+                byte* ptrPrimerPixel = (byte*)bitmapData.Scan0;
+                float r1 = 122;
+                float g1 = 151;
+                float b1 = 248;
+
+                float r2 = 134;
+                float g2 = 64;
+                float b2 = 178;
+
+                int r = 0;
+                int g = 0;
+                int b = 0;
+
+                float dr = (r2 - r1) / anchodelpixel;
+                float dg = (g2 - g1) / anchodelpixel;
+                float db = (b2 - b1) / anchodelpixel;
+
+
+                Parallel.For(0, alturadelpixel, y =>
+                {
+                    byte* lineaactual = ptrPrimerPixel + (y * bitmapData.Stride);
+                  
+                    for (int i = 0; i < anchodelpixel; i = i + bytesporpixel)
+                    {
+                       
+                        int azul = lineaactual[i];
+                        int verde = lineaactual[i + 1];
+                        int rojo = lineaactual[i + 2];
+
+                        r = (int)((r1 / 255.0f) * azul);
+                        g = (int)((g1 / 255.0f * verde));
+                        b = (int)((b1 / 255.0f) * rojo);
+
+                        if (r > 255) r = 255;
+                        else if (r < 0) r = 0;
+
+                        if (g > 255) g = 255;
+                        else if (g < 0) g = 0;
+
+                        if (b > 255) b = 255;
+                        else if (b < 0) b = 0;                     
+
+                        lineaactual[i] = (byte)azul;
+                        lineaactual[i + 1] = (byte)verde;
+                        lineaactual[i + 2] = (byte)rojo;
+
+                    }
+                    r1 = (r1 + dr);
+                    g1 = (g1 + dg);
+                    b1 = (b1 + db);
+                });
+                bmap.UnlockBits(bitmapData);
+                pictureBox2.Image = (Bitmap)bmap.Clone();
+            }
+
+
+        }
 
         private void button14_Click(object sender, EventArgs e)
         {
-            SetGrayscale();
+            SetBrightnessvideo(50);
+            
+
         }
 
         private void button15_Click(object sender, EventArgs e)
@@ -336,6 +474,304 @@ namespace Proyecto
 
             }
             pictureBox2.Image = resultante;
+        }
+
+        private void button16_Click(object sender, EventArgs e)
+        {
+            upvideo();
+
+        }
+        private void upvideo()
+        {
+            OpenFileDialog hi = new OpenFileDialog();
+            if (hi.ShowDialog() == DialogResult.OK)
+            {
+
+                capture = new VideoCapture(hi.FileName);
+                framestotales = Convert.ToInt32(capture.GetCaptureProperty(Emgu.CV.CvEnum.CapProp.FrameCount));
+                fps = Convert.ToInt32(capture.GetCaptureProperty(Emgu.CV.CvEnum.CapProp.Fps));
+                reproduciendo = true;
+                frameactual = new Mat();
+                frameactualnum = 0;
+                reproducirvideos();
+            }
+          
+        }
+        private async void reproducirvideos()
+        {
+            if (capture == null)
+            {
+                return;
+            }
+            try { 
+                while (reproduciendo==true && frameactualnum< framestotales)
+                {
+                    capture.SetCaptureProperty(Emgu.CV.CvEnum.CapProp.PosFrames, frameactualnum);
+                    capture.Read(frameactual);
+                    pictureBox1.Image = frameactual.Bitmap;
+                    frameactualnum += 1;
+                    await Task.Delay(1000/fps);
+                }
+            }
+            catch(Exception ex)
+            {
+                MessageBox.Show(ex.Message);
+            }
+        }
+
+        private void pictureBox1_Click(object sender, EventArgs e)
+        {
+
+        }
+
+        private void button13_Click(object sender, EventArgs e)
+        {
+          
+
+            Bitmap temp = (Bitmap)pictureBox1.Image;
+            Bitmap bmap = (Bitmap)temp.Clone();
+            unsafe
+            {
+
+                System.Drawing.Imaging.BitmapData bitmapData =
+                bmap.LockBits(new Rectangle(0, 0, bmap.Width, bmap.Height), System.Drawing.Imaging.ImageLockMode.ReadWrite, bmap.PixelFormat);
+                int bytesporpixel = System.Drawing.Bitmap.GetPixelFormatSize(bmap.PixelFormat) / 8;
+                int alturadelpixel = bitmapData.Height;
+                int anchodelpixel = bitmapData.Width * bytesporpixel;
+                byte* ptrPrimerPixel = (byte*)bitmapData.Scan0;
+              
+                Color c;
+
+                Parallel.For(0, alturadelpixel, y =>
+                {
+                    byte* lineaactual = ptrPrimerPixel + (y * bitmapData.Stride);
+
+                    for (int i = 0; i < anchodelpixel; i = i + bytesporpixel)
+                    {
+
+                        int azul = lineaactual[i];
+                        int verde = lineaactual[i + 1];
+                        int rojo = lineaactual[i + 2];                  
+                                             
+
+                        lineaactual[i] = 0;
+                        lineaactual[i + 1] = (byte)verde;
+                        lineaactual[i + 2] = 0;
+
+                    }
+                });
+                bmap.UnlockBits(bitmapData);
+                pictureBox2.Image = (Bitmap)bmap.Clone();
+            }
+
+
+
+        }
+
+        private void button12_Click_1(object sender, EventArgs e)
+        {
+            SetInvertVideo();
+        }
+        public void SetInvertVideo()
+        {
+            Bitmap temp = (Bitmap)pictureBox1.Image;
+            Bitmap bmap = (Bitmap)temp.Clone();
+            unsafe
+            {
+
+                System.Drawing.Imaging.BitmapData bitmapData =
+                bmap.LockBits(new Rectangle(0, 0, bmap.Width, bmap.Height), System.Drawing.Imaging.ImageLockMode.ReadWrite, bmap.PixelFormat);
+                int bytesporpixel = System.Drawing.Bitmap.GetPixelFormatSize(bmap.PixelFormat) / 8;
+                int alturadelpixel = bitmapData.Height;
+                int anchodelpixel = bitmapData.Width * bytesporpixel;
+                byte* ptrPrimerPixel = (byte*)bitmapData.Scan0;
+
+
+                Parallel.For(0, alturadelpixel, y =>
+                {
+                    byte* lineaactual = ptrPrimerPixel + (y * bitmapData.Stride);
+
+                    for (int i = 0; i < anchodelpixel; i = i + bytesporpixel)
+                    {
+
+                        int azul = lineaactual[i];
+                        int verde = lineaactual[i + 1];
+                        int rojo = lineaactual[i + 2];
+                        azul = 255-azul;
+                        verde =255- verde ;
+                        rojo = 255-rojo;
+
+                        lineaactual[i] = (byte)azul;
+                        lineaactual[i + 1] = (byte)verde;
+                        lineaactual[i + 2] = (byte)rojo;
+
+                    }
+                });
+                bmap.UnlockBits(bitmapData);
+                pictureBox2.Image = (Bitmap)bmap.Clone();
+            }
+        }
+
+        private void button8_Click(object sender, EventArgs e)
+        {
+            ruidovideo();
+
+            
+        }
+        public void ruidovideo()
+        {
+                /**/
+            Bitmap temp = (Bitmap)pictureBox1.Image;
+            Bitmap bmap = (Bitmap)temp.Clone();
+     
+            int porcentaje = 5;
+            int rangoMin = 85;
+            int rangoMax = 115;
+            float pbrillo = 0;
+            Random random = new Random();
+           int r = 0;
+            int g = 0;
+            int b = 0;
+           
+            unsafe
+            {
+
+                System.Drawing.Imaging.BitmapData bitmapData =
+                bmap.LockBits(new Rectangle(0, 0, bmap.Width, bmap.Height), System.Drawing.Imaging.ImageLockMode.ReadWrite, bmap.PixelFormat);
+                int bytesporpixel = System.Drawing.Bitmap.GetPixelFormatSize(bmap.PixelFormat) / 8;
+                int alturadelpixel = bitmapData.Height;
+                int anchodelpixel = bitmapData.Width * bytesporpixel;
+                byte* ptrPrimerPixel = (byte*)bitmapData.Scan0;
+                Parallel.For(0, alturadelpixel, y =>
+                {
+                    byte* lineaactual = ptrPrimerPixel + (y * bitmapData.Stride);
+
+                    for (int i = 0; i < anchodelpixel; i = i + bytesporpixel)
+                    {
+
+                        int azul = lineaactual[i];
+                        int verde = lineaactual[i + 1];
+                        int rojo = lineaactual[i + 2];                     
+
+                        if (random.Next(1, 100) <= porcentaje)
+                        {
+                            /*   azul= random.Next(rangoMin, rangoMax);
+                               verde=random.Next(rangoMin, rangoMax);
+                               rojo = random.Next(rangoMin, rangoMax);*/
+                            pbrillo = random.Next(rangoMin, rangoMax) / 100.0f;
+                            r = (int)(azul * pbrillo);
+                            g = (int)(verde * pbrillo);
+                            b = (int)(rojo * pbrillo);
+
+                            if(r>255)r = 255;
+                            else if(r<0)r = 0;
+                            if(g>255)g=255;
+                            else if(g<0)g=0;
+                            if(b>255)b=255;
+                            else if (b<0)b=0;
+
+
+                        }
+                     
+                        lineaactual[i] = (byte)r;
+                        lineaactual[i + 1] = (byte)g;
+                        lineaactual[i + 2] = (byte)rojo;
+                    }
+                });
+                bmap.UnlockBits(bitmapData);
+                pictureBox2.Image = (Bitmap)bmap.Clone();
+            }
+        }
+
+        private void button7_Click_1(object sender, EventArgs e)
+        {
+
+         
+            gradientevideo();
+        }
+        public void grisvideo()
+        {
+           
+        }
+
+        private void button17_Click(object sender, EventArgs e)
+        {
+            Bitmap temp = (Bitmap)pictureBox1.Image;
+            Bitmap bmap = (Bitmap)temp.Clone();
+
+            unsafe
+            {
+
+                System.Drawing.Imaging.BitmapData bitmapData =
+                bmap.LockBits(new Rectangle(0, 0, bmap.Width, bmap.Height), System.Drawing.Imaging.ImageLockMode.ReadWrite, bmap.PixelFormat);
+                int bytesporpixel = System.Drawing.Bitmap.GetPixelFormatSize(bmap.PixelFormat) / 8;
+                int alturadelpixel = bitmapData.Height;
+                int anchodelpixel = bitmapData.Width * bytesporpixel;
+                byte* ptrPrimerPixel = (byte*)bitmapData.Scan0;
+
+
+
+                Random random = new Random();
+                float g = 0;
+
+                Parallel.For(0, alturadelpixel, y =>
+                {
+                    byte* lineaactual = ptrPrimerPixel + (y * bitmapData.Stride);
+
+                    for (int i = 0; i < anchodelpixel; i = i + bytesporpixel)
+                    {
+
+                        int azul = lineaactual[i];
+                        int verde = lineaactual[i + 1];
+                        int rojo = lineaactual[i + 2];
+
+                        g = azul * 0.2116f + verde * 0.7152f + rojo * 0.0722f;
+
+                        azul = (int)g;
+                        verde = (int)g;
+                        rojo = (int)g;
+
+
+                        lineaactual[i] = (byte)azul;
+                        lineaactual[i + 1] = (byte)verde;
+                        lineaactual[i + 2] = (byte)rojo;
+
+
+
+                    }
+
+                });
+                bmap.UnlockBits(bitmapData);
+                pictureBox2.Image = (Bitmap)bmap.Clone();
+            }
+        }
+
+        private void button18_Click(object sender, EventArgs e)
+        {
+            Camaraselect.SignalToStop();
+        }
+
+        private void folderBrowserDialog1_HelpRequest(object sender, EventArgs e)
+        {
+
+        }
+
+        private void button11_Click(object sender, EventArgs e)
+        {
+            pictureBox2.Image.Dispose();
+            pictureBox2.Image = null;
+            pictureBox1.Image.Dispose();
+            pictureBox1.Image = null;
+        }
+    
+        private void videoSourcePlayer1_Click(object sender, EventArgs e)
+        {
+
+        }
+
+        private void videoSourcePlayer1_NewFrame_1(object sender, ref Bitmap image)
+        {
+            deteccion = detector.ProcessFrame(image);
         }
 
         private void Form1_Paint(object sender, PaintEventArgs e)

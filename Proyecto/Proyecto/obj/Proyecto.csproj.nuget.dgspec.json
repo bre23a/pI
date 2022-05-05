@@ -1,0 +1,65 @@
+{
+  "format": 1,
+  "restore": {
+    "D:\\Documentos\\Facultad\\Octavo semestre\\Procesamiento de imagenes\\Proyecto\\Proyecto\\Proyecto\\Proyecto.csproj": {}
+  },
+  "projects": {
+    "D:\\Documentos\\Facultad\\Octavo semestre\\Procesamiento de imagenes\\Proyecto\\Proyecto\\Proyecto\\Proyecto.csproj": {
+      "version": "1.0.0",
+      "restore": {
+        "projectUniqueName": "D:\\Documentos\\Facultad\\Octavo semestre\\Procesamiento de imagenes\\Proyecto\\Proyecto\\Proyecto\\Proyecto.csproj",
+        "projectName": "Proyecto",
+        "projectPath": "D:\\Documentos\\Facultad\\Octavo semestre\\Procesamiento de imagenes\\Proyecto\\Proyecto\\Proyecto\\Proyecto.csproj",
+        "packagesPath": "C:\\Users\\curii\\.nuget\\packages\\",
+        "outputPath": "D:\\Documentos\\Facultad\\Octavo semestre\\Procesamiento de imagenes\\Proyecto\\Proyecto\\Proyecto\\obj\\",
+        "projectStyle": "PackageReference",
+        "skipContentFileWrite": true,
+        "configFilePaths": [
+          "C:\\Users\\curii\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
+        ],
+        "originalTargetFrameworks": [
+          "net472"
+        ],
+        "sources": {
+          "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
+          "https://api.nuget.org/v3/index.json": {}
+        },
+        "frameworks": {
+          "net472": {
+            "projectReferences": {}
+          }
+        }
+      },
+      "frameworks": {
+        "net472": {
+          "dependencies": {
+            "Emgu.CV": {
+              "target": "Package",
+              "version": "[4.1.1.3497, )"
+            },
+            "Emgu.CV.Bitmap": {
+              "target": "Package",
+              "version": "[4.5.5.4823, )"
+            },
+            "Emgu.CV.runtime.windows": {
+              "target": "Package",
+              "version": "[4.5.5.4823, )"
+            }
+          }
+        }
+      },
+      "runtimes": {
+        "win": {
+          "#import": []
+        },
+        "win-x64": {
+          "#import": []
+        },
+        "win-x86": {
+          "#import": []
+        }
+      }
+    }
+  }
+}
