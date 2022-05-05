@@ -90,3 +90,4 @@ D:\Documentos\Facultad\Octavo semestre\Procesamiento de imagenes\Proyecto\Proyec
 D:\Documentos\Facultad\Octavo semestre\Procesamiento de imagenes\Proyecto\Proyecto\Proyecto\bin\Debug\AForge.Video.Ximea.xml
 D:\Documentos\Facultad\Octavo semestre\Procesamiento de imagenes\Proyecto\Proyecto\Proyecto\bin\Debug\AForge.Vision.xml
 D:\Documentos\Facultad\Octavo semestre\Procesamiento de imagenes\Proyecto\Proyecto\Proyecto\bin\Debug\HaarCascadeClassifer.dll
+D:\Documentos\Facultad\Octavo semestre\Procesamiento de imagenes\Proyecto\Proyecto\Proyecto\bin\Debug\haarcascade_frontalface_alt_tree.xml

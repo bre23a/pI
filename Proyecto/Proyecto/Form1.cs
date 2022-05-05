@@ -19,8 +19,8 @@ namespace Proyecto
 {
     public partial class Form1 : Form
     {
-       /* static readonly CascadeClassifier cascadeClassifier = new CascadeClassifier("haarcascade_frontalface_alt_tree.xml");
-        */
+        static readonly CascadeClassifier cascadeClassifier = new CascadeClassifier("haarcascade_frontalface_alt_tree.xml");
+       
 
         VideoCapture capture;
         bool reproduciendo=false;
@@ -48,12 +48,12 @@ namespace Proyecto
 
         private void button10_Click(object sender, EventArgs e)
         {
-          
-            if (openFileDialog1.ShowDialog()== DialogResult.OK)
+            using (OpenFileDialog img = new OpenFileDialog() { Multiselect = false, Filter = "JPEG |*.jpg" })
+            if (img.ShowDialog()== DialogResult.OK)
             {
                
-                pictureBox1.Image = (Bitmap)(Bitmap.FromFile(openFileDialog1.FileName));
-                original = (Bitmap)(Bitmap.FromFile(openFileDialog1.FileName));
+                pictureBox1.Image = (Bitmap)(Bitmap.FromFile(img.FileName));
+                original = (Bitmap)(Bitmap.FromFile(img.FileName));
 
                 this.Invalidate();
             }
@@ -132,14 +132,39 @@ namespace Proyecto
 
         private void button9_Click_1(object sender, EventArgs e)
         {
-      using(openFileDialog1 = new OpenFileDialog())
-            Camaraselect = new VideoCaptureDevice(Camaras[comboBox1.SelectedIndex].MonikerString);
-            videoSourcePlayer1.VideoSource = Camaraselect;
-            videoSourcePlayer1.Start();
 
+            int i = comboBox1.SelectedIndex;
+            string nomCam = Camaras[i].MonikerString;
+            Camaraselect = new VideoCaptureDevice(nomCam);
+            Camaraselect.NewFrame += new NewFrameEventHandler(Send);
+            Camaraselect.Start();
+
+            /* using (openFileDialog1 = new OpenFileDialog())
+             Camaraselect = new VideoCaptureDevice(Camaras[comboBox1.SelectedIndex].MonikerString);
+             videoSourcePlayer1.VideoSource = Camaraselect;
+             videoSourcePlayer1.Start();
+            */
         }
-    
-        
+
+        private void Send(object sender, NewFrameEventArgs eventArgs)
+        {
+            Bitmap imagen = (Bitmap)eventArgs.Frame.Clone();
+            Image<Rgb, byte> grayImage = new Image<Rgb, byte>(imagen);
+            Rectangle[] rectangles = cascadeClassifier.DetectMultiScale(grayImage, 1.4, 0);
+
+            foreach (Rectangle rectangle in rectangles)
+            {
+                using (Graphics graphics = Graphics.FromImage(imagen))
+                {
+
+                    using (Pen lapiz = new Pen(color: Color.Red, 5))
+                    {
+                        graphics.DrawRectangle(lapiz, rectangle);
+                    }
+                }
+            }
+            pictureBox3.Image = imagen;
+        }
 
         private void Form1_MouseDown(object sender, MouseEventArgs e)
         {
@@ -483,7 +508,9 @@ namespace Proyecto
         }
         private void upvideo()
         {
-            OpenFileDialog hi = new OpenFileDialog();
+
+            using (OpenFileDialog hi = new OpenFileDialog() { Multiselect = false, Filter = "MP4 |*.mp4" })
+             
             if (hi.ShowDialog() == DialogResult.OK)
             {
 
@@ -749,6 +776,8 @@ namespace Proyecto
         private void button18_Click(object sender, EventArgs e)
         {
             Camaraselect.SignalToStop();
+            pictureBox3.Image.Dispose();
+            pictureBox3.Image = null;
         }
 
         private void folderBrowserDialog1_HelpRequest(object sender, EventArgs e)
@@ -772,6 +801,39 @@ namespace Proyecto
         private void videoSourcePlayer1_NewFrame_1(object sender, ref Bitmap image)
         {
             deteccion = detector.ProcessFrame(image);
+        }
+
+        private void button19_Click(object sender, EventArgs e)
+        {
+            using (OpenFileDialog ofg = new OpenFileDialog())
+            {
+                if (ofg.ShowDialog() == DialogResult.OK)
+                {
+                
+                    /**/
+                    pictureBox1.Image=Image.FromFile(ofg.FileName);
+                    Bitmap bitmap=new Bitmap (pictureBox1.Image);
+                    Image<Rgb,byte> grayImage= new Image<Rgb, byte> (bitmap);
+                    Rectangle[] rectangles =  cascadeClassifier.DetectMultiScale(grayImage, 1.4, 0);
+
+                    foreach (Rectangle rectangle in rectangles)
+                    {
+                        using(Graphics graphics = Graphics.FromImage(bitmap))
+                        {
+                            using(Pen lapiz=new Pen (color:Color.Red,5))
+                            {
+                                graphics.DrawRectangle(lapiz, rectangle);
+                            }
+                        }
+                    }
+                    pictureBox3.Image = bitmap;
+                }
+            }
+        }
+
+        private void pictureBox3_Click_1(object sender, EventArgs e)
+        {
+
         }
 
         private void Form1_Paint(object sender, PaintEventArgs e)
