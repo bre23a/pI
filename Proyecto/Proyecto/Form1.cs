@@ -137,6 +137,7 @@ namespace Proyecto
             string nomCam = Camaras[i].MonikerString;
             Camaraselect = new VideoCaptureDevice(nomCam);
             Camaraselect.NewFrame += new NewFrameEventHandler(Send);
+         
             Camaraselect.Start();
 
             /* using (openFileDialog1 = new OpenFileDialog())
@@ -145,12 +146,14 @@ namespace Proyecto
              videoSourcePlayer1.Start();
             */
         }
-
-        private void Send(object sender, NewFrameEventArgs eventArgs)
+              void Send(object sender, NewFrameEventArgs eventArgs)
         {
+
+           
             Bitmap imagen = (Bitmap)eventArgs.Frame.Clone();
             Image<Rgb, byte> grayImage = new Image<Rgb, byte>(imagen);
             Rectangle[] rectangles = cascadeClassifier.DetectMultiScale(grayImage, 1.4, 0);
+           
 
             foreach (Rectangle rectangle in rectangles)
             {
@@ -159,10 +162,16 @@ namespace Proyecto
 
                     using (Pen lapiz = new Pen(color: Color.Red, 5))
                     {
-                        graphics.DrawRectangle(lapiz, rectangle);
+                        graphics.DrawRectangle(lapiz, rectangle);                
                     }
                 }
+                if (InvokeRequired)
+                    Invoke(new Action(() => label4.Text = rectangles.Length.ToString()));
+            
             }
+          
+
+            contador = 0;
             pictureBox3.Image = imagen;
         }
 
@@ -226,7 +235,7 @@ namespace Proyecto
             Bitmap bmap = (Bitmap)temp.Clone();
             unsafe
             {
-
+             
                 System.Drawing.Imaging.BitmapData bitmapData =
                 bmap.LockBits(new Rectangle(0, 0, bmap.Width, bmap.Height),System.Drawing.Imaging.ImageLockMode.ReadWrite, bmap.PixelFormat);
                 int bytesporpixel = System.Drawing.Bitmap.GetPixelFormatSize(bmap.PixelFormat)/8;
@@ -243,7 +252,6 @@ namespace Proyecto
 
                       for (int i = 0; i < anchodelpixel; i = i + bytesporpixel)
                       {
-                         
                           int azul = lineaactual[i];
                           int verde = lineaactual[i + 1];
                           int rojo = lineaactual[i + 2];
@@ -269,7 +277,9 @@ namespace Proyecto
                       }
                   });       
                 bmap.UnlockBits(bitmapData);
+
                 pictureBox2.Image = (Bitmap)bmap.Clone();
+
             }
             
           
@@ -472,9 +482,7 @@ namespace Proyecto
 
         private void button14_Click(object sender, EventArgs e)
         {
-            SetBrightnessvideo(50);
-            
-
+            filtro = 1;
         }
 
         private void button15_Click(object sender, EventArgs e)
@@ -498,6 +506,7 @@ namespace Proyecto
 
 
             }
+
             pictureBox2.Image = resultante;
         }
 
@@ -506,39 +515,90 @@ namespace Proyecto
             upvideo();
 
         }
-        private void upvideo()
+        private async void upvideo()
         {
 
             using (OpenFileDialog hi = new OpenFileDialog() { Multiselect = false, Filter = "MP4 |*.mp4" })
-             
-            if (hi.ShowDialog() == DialogResult.OK)
-            {
 
-                capture = new VideoCapture(hi.FileName);
-                framestotales = Convert.ToInt32(capture.GetCaptureProperty(Emgu.CV.CvEnum.CapProp.FrameCount));
-                fps = Convert.ToInt32(capture.GetCaptureProperty(Emgu.CV.CvEnum.CapProp.Fps));
-                reproduciendo = true;
-                frameactual = new Mat();
-                frameactualnum = 0;
-                reproducirvideos();
-            }
+                if (hi.ShowDialog() == DialogResult.OK){
+                    
+                    capture = new VideoCapture(hi.FileName);
+                    Mat m = new Mat();
+                    capture.Read(m);
+                    pictureBox1.Image = m.Bitmap;
+
+                    reproducirvideos();
+
+                   /* framestotales = Convert.ToInt32(capture.GetCaptureProperty(Emgu.CV.CvEnum.CapProp.FrameCount));
+                    fps = Convert.ToInt32(capture.GetCaptureProperty(Emgu.CV.CvEnum.CapProp.Fps));
+                    reproduciendo = true;
+                    frameactual = new Mat();
+                    frameactualnum = 0;
+                    reproducirvideos();
+                   */
+
+                }
           
         }
+        int filtro = 0;
+        Bitmap final;
+        bool pausa=false;
         private async void reproducirvideos()
         {
             if (capture == null)
             {
                 return;
             }
-            try { 
-                while (reproduciendo==true && frameactualnum< framestotales)
+            try {
+                while (!pausa)
+                {
+                    Mat m = new Mat();
+                    capture.Read(m);
+                    if (!m.IsEmpty)
+                    {
+                        switch (filtro)
+                        {
+                            case 1:
+                                SetBrightnessvideo(50);
+                                break;
+                            case 2:
+                                videoverde();
+                                break;
+                            case 3:
+                                SetInvertVideo();
+                                break;
+                            case 4:
+                                     ruidovideo();
+                                break;
+                            case 5:
+                                videogris();
+                                break;
+                            case 6:
+                                pictureBox2.Image = m.Bitmap;
+                                break;
+
+                            default:
+                                break;
+                        }
+                        pictureBox1.Image = m.Bitmap;
+                        double fps = capture.GetCaptureProperty(Emgu.CV.CvEnum.CapProp.Fps);
+                        await Task.Delay(1000 / Convert.ToInt32(fps));
+                    }
+                    else
+                    {
+                        break;
+                    }
+                }
+
+              /*  while (reproduciendo==true && frameactualnum< framestotales)
                 {
                     capture.SetCaptureProperty(Emgu.CV.CvEnum.CapProp.PosFrames, frameactualnum);
                     capture.Read(frameactual);
                     pictureBox1.Image = frameactual.Bitmap;
                     frameactualnum += 1;
                     await Task.Delay(1000/fps);
-                }
+                }*/
+
             }
             catch(Exception ex)
             {
@@ -546,6 +606,41 @@ namespace Proyecto
             }
         }
 
+        private async void reproducirvideosfiltros()
+        {
+            if (capture == null)
+            {
+                return;
+            }
+            try
+            {
+                while (!pausa)
+                {
+                    Mat m = new Mat();
+                    capture.Read(m);
+                    if (!m.IsEmpty)
+                    {
+                        pictureBox2.Image = m.Bitmap;
+                        double fps = capture.GetCaptureProperty(Emgu.CV.CvEnum.CapProp.Fps);
+                        await Task.Delay(1000 / Convert.ToInt32(fps));
+                    }
+                }
+
+                /*  while (reproduciendo==true && frameactualnum< framestotales)
+                  {
+                      capture.SetCaptureProperty(Emgu.CV.CvEnum.CapProp.PosFrames, frameactualnum);
+                      capture.Read(frameactual);
+                      pictureBox1.Image = frameactual.Bitmap;
+                      frameactualnum += 1;
+                      await Task.Delay(1000/fps);
+                  }*/
+
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message);
+            }
+        }
         private void pictureBox1_Click(object sender, EventArgs e)
         {
 
@@ -553,8 +648,10 @@ namespace Proyecto
 
         private void button13_Click(object sender, EventArgs e)
         {
-          
-
+            filtro = 2;
+        }
+        public void videoverde()
+        {
             Bitmap temp = (Bitmap)pictureBox1.Image;
             Bitmap bmap = (Bitmap)temp.Clone();
             unsafe
@@ -566,11 +663,10 @@ namespace Proyecto
                 int alturadelpixel = bitmapData.Height;
                 int anchodelpixel = bitmapData.Width * bytesporpixel;
                 byte* ptrPrimerPixel = (byte*)bitmapData.Scan0;
-              
+
                 Color c;
 
-                Parallel.For(0, alturadelpixel, y =>
-                {
+                Parallel.For(0, alturadelpixel, y => {
                     byte* lineaactual = ptrPrimerPixel + (y * bitmapData.Stride);
 
                     for (int i = 0; i < anchodelpixel; i = i + bytesporpixel)
@@ -578,8 +674,8 @@ namespace Proyecto
 
                         int azul = lineaactual[i];
                         int verde = lineaactual[i + 1];
-                        int rojo = lineaactual[i + 2];                  
-                                             
+                        int rojo = lineaactual[i + 2];
+
 
                         lineaactual[i] = 0;
                         lineaactual[i + 1] = (byte)verde;
@@ -590,14 +686,11 @@ namespace Proyecto
                 bmap.UnlockBits(bitmapData);
                 pictureBox2.Image = (Bitmap)bmap.Clone();
             }
-
-
-
         }
-
         private void button12_Click_1(object sender, EventArgs e)
         {
-            SetInvertVideo();
+            filtro = 3;
+           
         }
         public void SetInvertVideo()
         {
@@ -641,7 +734,8 @@ namespace Proyecto
 
         private void button8_Click(object sender, EventArgs e)
         {
-            ruidovideo();
+            filtro = 4;
+       
 
             
         }
@@ -709,19 +803,7 @@ namespace Proyecto
                 pictureBox2.Image = (Bitmap)bmap.Clone();
             }
         }
-
-        private void button7_Click_1(object sender, EventArgs e)
-        {
-
-         
-            gradientevideo();
-        }
-        public void grisvideo()
-        {
-           
-        }
-
-        private void button17_Click(object sender, EventArgs e)
+        public void videogris()
         {
             Bitmap temp = (Bitmap)pictureBox1.Image;
             Bitmap bmap = (Bitmap)temp.Clone();
@@ -773,10 +855,25 @@ namespace Proyecto
             }
         }
 
+        private void button7_Click_1(object sender, EventArgs e)
+        {         
+            gradientevideo();
+        }
+        public void grisvideo()
+        {
+           
+        }
+
+        private void button17_Click(object sender, EventArgs e)
+        {
+            filtro = 5;
+           
+        }
+
         private void button18_Click(object sender, EventArgs e)
         {
             Camaraselect.SignalToStop();
-            pictureBox3.Image.Dispose();
+           pictureBox3.Image.Dispose();
             pictureBox3.Image = null;
         }
 
@@ -791,6 +888,7 @@ namespace Proyecto
             pictureBox2.Image = null;
             pictureBox1.Image.Dispose();
             pictureBox1.Image = null;
+            filtro = 6;
         }
     
         private void videoSourcePlayer1_Click(object sender, EventArgs e)
@@ -803,6 +901,7 @@ namespace Proyecto
             deteccion = detector.ProcessFrame(image);
         }
 
+        int contador = 0;
         private void button19_Click(object sender, EventArgs e)
         {
             using (OpenFileDialog ofg = new OpenFileDialog())
@@ -815,7 +914,7 @@ namespace Proyecto
                     Bitmap bitmap=new Bitmap (pictureBox1.Image);
                     Image<Rgb,byte> grayImage= new Image<Rgb, byte> (bitmap);
                     Rectangle[] rectangles =  cascadeClassifier.DetectMultiScale(grayImage, 1.4, 0);
-
+               
                     foreach (Rectangle rectangle in rectangles)
                     {
                         using(Graphics graphics = Graphics.FromImage(bitmap))
@@ -823,15 +922,22 @@ namespace Proyecto
                             using(Pen lapiz=new Pen (color:Color.Red,5))
                             {
                                 graphics.DrawRectangle(lapiz, rectangle);
+                              
                             }
                         }
                     }
+                   
                     pictureBox3.Image = bitmap;
                 }
             }
         }
 
         private void pictureBox3_Click_1(object sender, EventArgs e)
+        {
+
+        }
+
+        private void label3_Click(object sender, EventArgs e)
         {
 
         }
